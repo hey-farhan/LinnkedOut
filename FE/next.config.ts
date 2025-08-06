@@ -21,7 +21,12 @@ const nextConfig: NextConfig = {
           protocol: 'https',
           hostname: 'i.ytimg.com',
         },
+        {
+          protocol: 'https',
+          hostname: 'example.com',
+        },
       ],
+    unoptimized: true, // Fallback for invalid images
   },
 };
 

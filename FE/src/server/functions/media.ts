@@ -37,6 +37,7 @@ export const insertMedia = async (generalisedMedia: Media): Promise<{ id: number
         throw new Error('durationMs must be an integer');
     }
     try {
+        console.log('[insertMedia] Attempting to insert media:', generalisedMedia.title);
         const durationMs = generalisedMedia.durationMs !== undefined
             ? Math.floor(generalisedMedia.durationMs)
             : null;
@@ -55,16 +56,21 @@ export const insertMedia = async (generalisedMedia: Media): Promise<{ id: number
                 embeddingId: generalisedMedia.embeddingId,
             })
             .returning({ id: media.id });
-            return {id : InsertedMedia.id}
-    } catch (error) {
-        console.error('Failed to insert media model', error);
-        throw new Error('Failed to insert media model');
+        console.log('[insertMedia] Media inserted successfully with ID:', InsertedMedia.id);
+        return {id : InsertedMedia.id}
+    } catch (error: any) {
+        console.error('[insertMedia] Failed to insert media model:', error);
+        console.error('[insertMedia] Error message:', error?.message);
+        console.error('[insertMedia] Error code:', error?.code);
+        console.error('[insertMedia] Full error:', JSON.stringify(error, null, 2));
+        throw new Error(`Failed to insert media model: ${error?.message || String(error)}`);
     }
 }
 
 export const insertYoutubeMedia = async (ytMedia: YoutubeMedia): Promise<{ id: number }> => {
     // 'use server'
     try {
+        console.log('[insertYoutubeMedia] Attempting to insert youtube media');
         const [ReturnedMedia] = await db.insert(youtubeMedia)
             .values([{
                 description: ytMedia.description,
@@ -72,10 +78,13 @@ export const insertYoutubeMedia = async (ytMedia: YoutubeMedia): Promise<{ id: n
                 englishCaptions: ytMedia.englishCaptions
             }])
             .returning({ id: youtubeMedia.id });
-            return {id : ReturnedMedia.id} 
-    } catch (error) {
-        console.error('Failed to insert youtube media model', error);
-        throw new Error('Failed to insert youtube media model');
+        console.log('[insertYoutubeMedia] YouTube media inserted successfully with ID:', ReturnedMedia.id);
+        return {id : ReturnedMedia.id} 
+    } catch (error: any) {
+        console.error('[insertYoutubeMedia] Failed to insert youtube media model:', error);
+        console.error('[insertYoutubeMedia] Error message:', error?.message);
+        console.error('[insertYoutubeMedia] Error code:', error?.code);
+        throw new Error(`Failed to insert youtube media model: ${error?.message || String(error)}`);
     }
 }
 
@@ -211,17 +220,33 @@ export const getMediaFromQuery = async (query: string): Promise<Media[]> => {
 
 export const insertEmbeddings = async (content: string, contentEmbeddings: number[], category: string): Promise<{ id: number }> => {
     try {
+        console.log('[insertEmbeddings] Validating embeddings...');
+        if (!contentEmbeddings || !Array.isArray(contentEmbeddings) || contentEmbeddings.length === 0) {
+            throw new Error('Content embeddings must be a non-empty array');
+        }
+        console.log('[insertEmbeddings] Embeddings valid, length:', contentEmbeddings.length);
+        
+        console.log('[insertEmbeddings] Attempting to insert embeddings for category:', category);
         const insertedRecord = await db
             .insert(schema.contentVectors)
             .values({
                 content: content,
-                contentEmbedding: contentEmbeddings,
+                contentEmbedding: contentEmbeddings as any,
                 category: category
             })
             .returning({ id: schema.contentVectors.id });
+        
+        console.log('[insertEmbeddings] Checking returned record...');
+        if (!insertedRecord || insertedRecord.length === 0) {
+            throw new Error('Failed to insert embedding - no record returned');
+        }
+        
+        console.log('[insertEmbeddings] Embeddings inserted successfully with ID:', insertedRecord[0].id);
         return { id: insertedRecord[0].id };
-    } catch (error) {
-        console.error('Something went wrong while querying database', error);
+    } catch (error: any) {
+        console.error('[insertEmbeddings] Failed while inserting embeddings:', error);
+        console.error('[insertEmbeddings] Error message:', error?.message);
+        console.error('[insertEmbeddings] Error code:', error?.code);
         throw new Error(`Failed to insert embeddings in the database: ${error instanceof Error ? error.message : "Unknown Error Occurred"}`);
     }
 };

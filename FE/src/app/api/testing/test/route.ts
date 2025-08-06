@@ -5,6 +5,7 @@ import { YoutubeAPIService } from '@/services/Platform/youtube/YoutubeAPIService
 import { YoutubeMetadataSevice } from '@/services/Platform/youtube/YoutubeMetadataService';
 import { YoutubeTranscriptService } from '@/services/Platform/youtube/YoutubeTranscriptionService';
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
 // export async function GET() {
 //     try{
@@ -85,17 +86,34 @@ export async function POST(
     request: NextRequest
 ) {
     try{
+        console.log("[/api/testing/test] Received POST request");
         const formContents:FormDataType = await request.json();
+        console.log("[/api/testing/test] Form contents:", JSON.stringify(formContents));
+        
         const result:Media[] = await HelperFunctions.PipelineInitializer(formContents);
+        console.log("[/api/testing/test] Pipeline completed successfully, result length:", result.length);
+        
+        // Revalidate the homepage to show new videos
+        revalidatePath('/');
+        console.log("[/api/testing/test] Homepage cache revalidated");
+        
         return NextResponse.json({
             body: result,
             length: result.length,      
             status: 200
         })
     } catch(error: any){
-        console.error("Caught error in POST handler:", error);
+        console.error("[/api/testing/test] Caught error in POST handler:", error);
+        console.error("[/api/testing/test] Error message:", error?.message);
+        console.error("[/api/testing/test] Error stack:", error?.stack);
+        console.error("[/api/testing/test] Full error:", JSON.stringify(error, null, 2));
+        
         return new NextResponse(
-            JSON.stringify({ message: 'Error saving videos', error: error }),
+            JSON.stringify({ 
+                message: 'Error saving videos', 
+                error: error?.message || String(error),
+                stack: error?.stack
+            }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
     }

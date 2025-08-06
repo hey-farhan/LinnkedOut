@@ -115,38 +115,53 @@ export const PostInputForm:React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    setTimeout(async () => {
-      const options = { 
-        method: 'POST', 
-        body: JSON.stringify(formData),
-        headers: { 
-          'Content-Type': 'application/json',  
-        },
-      }
-      
-      try{
-        const response = await utility.apicaller(FORM_INSERT_API_URL, options)
-        const { body, status } = await response.json()
-        if(status === 200) {
-          console.log(JSON.stringify(body))
-        }
-      } catch(error){
-        console.error(error)
-      }
-      
-      setIsSubmitting(false);
-      alert('Content submitted successfully!');
-    }, 2000);
+    console.log('[PostInputForm] Starting submission with data:', formData);
 
-    // See if this is working or not 
-    setFormData({
-       url: [],
-      category: '',
-      customTags: [],
-      fetchSimilar: true,
-      similarityLevel: 'medium',
-      contentType: 'auto'
-    });
+    const options = { 
+      method: 'POST', 
+      body: JSON.stringify(formData),
+      headers: { 
+        'Content-Type': 'application/json',  
+      },
+    }
+    
+    try{
+      console.log('[PostInputForm] Calling API:', FORM_INSERT_API_URL);
+      const response = await utility.apicaller(FORM_INSERT_API_URL, options);
+      console.log('[PostInputForm] Response status:', response.status);
+      
+      const responseData = await response.json();
+      console.log('[PostInputForm] Response data:', responseData);
+      
+      const { body, status, length } = responseData;
+      
+      if(status === 200) {
+        console.log('[PostInputForm] Successfully processed videos:', length);
+        alert(`Content submitted successfully! ${length} videos processed.`);
+        
+        // Reset form
+        setFormData({
+          url: [],
+          category: '',
+          customTags: [],
+          fetchSimilar: true,
+          similarityLevel: 'medium',
+          contentType: 'auto'
+        });
+        
+        // Redirect to homepage
+        console.log('[PostInputForm] Redirecting to homepage...');
+        window.location.href = '/';
+      } else {
+        console.error('[PostInputForm] Non-200 status:', status);
+        alert(`Error: ${responseData.message || 'Failed to process videos'}`);
+      }
+    } catch(error){
+      console.error('[PostInputForm] Error submitting form:', error);
+      alert('Failed to submit content. Please check console for details.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -6,6 +6,9 @@ export class YoutubeMetadataSevice {
 
     public extractMediaData = (youtubeMetaData: any): Media => {
         const { id } = youtubeMetaData;
+        // Handle both direct video fetch (id is string) and search results (id is object)
+        const videoId = typeof id === 'string' ? id : id?.videoId || id?.kind;
+        
         const { title, thumbnails, tags } = youtubeMetaData.snippet;
         const { duration } = youtubeMetaData.contentDetails || {};
         const durationMs: number = this.parseDurationToMs(duration)
@@ -16,10 +19,10 @@ export class YoutubeMetadataSevice {
             type,
             platform: 'youtube',
             thumbnailUrl,
-            postUrl: `https://www.youtube.com/watch?v=${id}`,
+            postUrl: `https://www.youtube.com/watch?v=${videoId}`,
             title,
             durationMs: durationMs!,
-            postId: id, 
+            postId: videoId, 
         }
     };
 

@@ -39,7 +39,7 @@ export default class RedditOrchestrator {
 
             const EmbeddingMetadata: EmbeddingReturntype = await this.embeddingStorageOrchestrator(mediaData, redditData)
             mediaData.embeddingId = EmbeddingMetadata.embeddingId;
-            // const metaDataId: number = await this.redditRepository.saveRedditPostToDatabase(mediaData, redditData);
+            await this.redditRepository.saveRedditPostToDatabase(mediaData, redditData);
             return({media:mediaData, embeddingsType:EmbeddingMetadata})
 
             // return { videoMetadataId: metaDataId, embeddingsId: embeddingsId }
@@ -61,9 +61,8 @@ export default class RedditOrchestrator {
 
             const assignedCategory = this.vectorStore.classifyEmbedding(contentEmbeddings, categoryEmbeddings);
             mediaData.category = assignedCategory;
-            // const embeddingIdInDatabase: number = await this.embeddingRepository.storeContent(preprocessedContent, contentEmbeddings, assignedCategory);
-            // return embeddingIdInDatabase;
-            return {embeddingId:200, embeddings: contentEmbeddings};
+            const embeddingIdInDatabase: number = await this.embeddingRepository.storeContent(preprocessedContent, contentEmbeddings, assignedCategory);
+            return {embeddingId:embeddingIdInDatabase, embeddings: contentEmbeddings};
         } catch (error) {
             console.error("RedditOrchestrator: Error in storig embeddings:", error);
             throw error;

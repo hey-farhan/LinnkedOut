@@ -84,19 +84,28 @@ export class YoutubeAPIService {
 
     public async fetchMultipleYtVideosFromQuery(query: string):Promise<any> {
     try {
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(query)}&maxResults=${20}&key=${this.apikey}`;
+        // Step 1: Search for videos
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(query)}&maxResults=${20}&key=${this.apikey}`;
         const options = { 
             method: 'GET', 
             headers: { 
                 'Content-Type': 'application/json' 
             },
         }
-        const response:any = await utility.apicaller(url, options, 5, 1000);
-        if (!response.ok) throw new Error(`YouTube API error: ${response.status} ${response.statusText}`);
-        const data = await response.json();
-        if (!data.items || data.items.length === 0) throw new Error('No video data found in the YouTube response');
+        const searchResponse:any = await utility.apicaller(searchUrl, options, 5, 1000);
+        if (!searchResponse.ok) throw new Error(`YouTube API error: ${searchResponse.status} ${searchResponse.statusText}`);
+        const searchData = await searchResponse.json();
+        if (!searchData.items || searchData.items.length === 0) throw new Error('No video data found in the YouTube response');
         
-        return data?.items;
+        // Step 2: Extract video IDs and fetch full details (including duration)
+        const videoIds = searchData.items.map((item: any) => item.id.videoId).join(',');
+        const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${this.apikey}`;
+        
+        const detailsResponse:any = await utility.apicaller(detailsUrl, options, 5, 1000);
+        if (!detailsResponse.ok) throw new Error(`YouTube API error: ${detailsResponse.status} ${detailsResponse.statusText}`);
+        const detailsData = await detailsResponse.json();
+        
+        return detailsData?.items || [];
     } catch (error) {
       console.error('Error fetching YouTube metadata:', error);
       throw error;
